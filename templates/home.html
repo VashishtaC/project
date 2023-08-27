@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Django Project</title>
+    <style>
+        /* Your CSS Styles Here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Registration</h1>
+        <form id="registration-form" method="post" action="{% url 'register_user' %}">
+            {% csrf_token %}
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required><br>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br>
+            <label for="confirm-password">Confirm Password:</label>
+            <input type="password" id="confirm-password" name="confirm_password" required><br>
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <div id="user-profile" data-user-id="{{ user.id }}">
+            <!-- User profile information will be displayed here -->
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Create Post</h1>
+        <form id="create-post-form">
+            <label for="post-title">Title:</label>
+            <input type="text" id="post-title" name="title" required><br>
+            <label for="post-description">Description:</label>
+            <textarea id="post-description" name="description" required></textarea><br>
+            <label for="post-content">Content:</label>
+            <textarea id="post-content" name="content" required></textarea><br>
+            <button type="submit">Create Post</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h1>Edit Post</h1>
+        <form id="edit-post-form" data-post-id="{{ post.id }}">
+            <label for="edit-post-title">Title:</label>
+            <input type="text" id="edit-post-title" name="title" value="{{ post.title }}" required><br>
+            <label for="edit-post-description">Description:</label>
+            <textarea id="edit-post-description" name="description" required>{{ post.description }}</textarea><br>
+            <label for="edit-post-content">Content:</label>
+            <textarea id="edit-post-content" name="content" required>{{ post.content }}</textarea><br>
+            <button type="submit">Update Post</button>
+        </form>
+    </div>
+
+    <script>
+    // User Registration Form Validation
+    const registrationForm = document.getElementById('registration-form');
+    registrationForm.addEventListener('submit', (event) => {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        if (password !== confirmPassword) {
+            event.preventDefault();
+            alert('Passwords do not match. Please try again.');
+        }
+    });
+
+    // Display User Profile
+    const userProfile = document.getElementById('user-profile');
+    const userId = userProfile.getAttribute('data-user-id');
+    fetch(`/api/users/${userId}/`)
+        .then(response => response.json())
+        .then(data => {
+            userProfile.innerHTML = `
+                <h2>User Profile</h2>
+                <p><strong>Username:</strong> ${data.username}</p>
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Date of Birth:</strong> ${data.date_of_birth}</p>
+            `;
+        });
+
+    // Create Post Form Submission
+    const createPostForm = document.getElementById('create-post-form');
+    createPostForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const formData = new FormData(createPostForm);
+        fetch('/api/posts/', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Post created successfully!');
+            createPostForm.reset();
+        });
+    });
+
+    // Edit Post Form Submission
+    const editPostForm = document.getElementById('edit-post-form');
+    editPostForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const postId = editPostForm.getAttribute('data-post-id');
+        const formData = new FormData(editPostForm);
+        fetch(`/api/posts/${postId}/`, {
+            method: 'PUT',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Post updated successfully!');
+            location.reload();
+        });
+    });
+
+    // Delete Post
+    function deletePost(postId) {
+        if (confirm('Are you sure you want to delete this post?')) {
+            fetch(`/api/posts/${postId}/`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Post deleted successfully!');
+                    location.reload();
+                }
+            });
+        }
+    }
+
+    // Like Post
+    function likePost(postId) {
+        fetch(`/api/posts/${postId}/like/`, {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Post liked successfully!');
+            location.reload();
+        });
+    }
+
+
+    </script>
+</body>
+</html>
